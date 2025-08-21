@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from workstations.models import Workstation
 
 # Модель для навыков
 class Skill(models.Model):
@@ -86,12 +87,13 @@ class Employee(models.Model):
         related_name="employees",
         blank=True
     )
-    workstation = models.ForeignKey(
-        'workstations.Workstation',
+    workstation = models.OneToOneField(
+        Workstation,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name="Рабочее место"
+        verbose_name="Рабочее место",
+        related_name="employee"
     )
 
     class Meta:

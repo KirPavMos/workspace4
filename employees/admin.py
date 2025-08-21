@@ -1,16 +1,5 @@
 from django.contrib import admin
-from .models import Skill, EmployeeSkill, Employee
-
-@admin.register(Skill)
-class SkillAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description')
-    search_fields = ('name',)
-
-@admin.register(EmployeeSkill)
-class EmployeeSkillAdmin(admin.ModelAdmin):
-    list_display = ('employee', 'skill', 'level')
-    list_filter = ('skill', 'level')
-    search_fields = ('employee__last_name', 'employee__first_name', 'skill__name')
+from .models import Employee, Skill, EmployeeSkill
 
 class EmployeeSkillInline(admin.TabularInline):
     model = EmployeeSkill
@@ -18,13 +7,13 @@ class EmployeeSkillInline(admin.TabularInline):
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ('last_name', 'first_name', 'middle_name', 'position', 'gender', 'hire_date')
-    list_filter = ('position', 'gender', 'hire_date')
-    search_fields = ('last_name', 'first_name', 'middle_name', 'position', 'email')
+    list_display = ('last_name', 'first_name', 'position', 'workstation', 'email')
+    list_filter = ('position', 'gender')
+    search_fields = ('last_name', 'first_name', 'email')
     inlines = [EmployeeSkillInline]
     fieldsets = (
         ('Основная информация', {
-            'fields': ('user', 'last_name', 'first_name', 'middle_name', 'gender')
+            'fields': ('last_name', 'first_name', 'middle_name', 'gender')
         }),
         ('Контактная информация', {
             'fields': ('email',)
@@ -37,3 +26,13 @@ class EmployeeAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+@admin.register(Skill)
+class SkillAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description')
+    search_fields = ('name',)
+
+@admin.register(EmployeeSkill)
+class EmployeeSkillAdmin(admin.ModelAdmin):
+    list_display = ('employee', 'skill', 'level')
+    list_filter = ('skill', 'level')
