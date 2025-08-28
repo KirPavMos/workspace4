@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "workstations.apps.WorkstationsConfig",
-    "employees.apps.EmployeesConfig",
+    'employees',
     
 ]
 
