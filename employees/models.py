@@ -1,131 +1,104 @@
 from django.db import models
-from django.contrib.auth.models import User
-from django.conf import settings
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils import timezone
-from workstations.models import Workstation
+from django.core.exceptions import ValidationError
+import os
 
-# Модель для навыков
-class Skill(models.Model):
-    name = models.CharField(max_length=100, verbose_name="Название навыка")
-    description = models.TextField(blank=True, verbose_name="Описание навыка")
-
-    class Meta:
-        verbose_name = "Навык"
-        verbose_name_plural = "Навыки"
-
-    def __str__(self):
-        return self.name
-
-# Модель для связи сотрудника с навыком и уровнем владения
-class EmployeeSkill(models.Model):
-    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, verbose_name="Сотрудник")
-    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, verbose_name="Навык")
-    level = models.PositiveSmallIntegerField(
-        verbose_name="Уровень владения",
-        choices=[(i, f"{i}") for i in range(1, 11)],
-        default=1
-    )
-
-    class Meta:
-        verbose_name = "Навык сотрудника"
-        verbose_name_plural = "Навыки сотрудников"
-        unique_together = ('employee', 'skill')
-
-    def __str__(self):
-        return f"{self.employee} - {self.skill} (уровень: {self.level})"
-
-# Основная модель сотрудника
 class Employee(models.Model):
     GENDER_CHOICES = [
         ('M', 'Мужской'),
-        ('F', 'Женский'),        
+        ('F', 'Женский'),
     ]
-
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name="Пользователь",
-        related_name="employee_profile",
-        null=True,
-        blank=True
-    )
     
-    # Основная информация
-    gender = models.CharField(
-        max_length=1,
-        choices=GENDER_CHOICES,
-        verbose_name="Пол",
+    first_name = models.CharField(max_length=100, verbose_name='Имя')
+    last_name = models.CharField(max_length=100, verbose_name='Фамилия')
+    middle_name = models.CharField(max_length=100, verbose_name='Отчество', blank=True, null=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name='Пол')
+    email = models.EmailField(verbose_name='Email', unique=True)
+    position = models.CharField(max_length=200, verbose_name='Должность')
+    hire_date = models.DateField(verbose_name='Дата приема на работу')
+    workstation = models.ForeignKey(
+        'workstations.Workstation', 
+        on_delete=models.SET_NULL, 
+        null=True, 
         blank=True,
-        null=True
+        verbose_name='Рабочее место'
     )
-    first_name = models.CharField(max_length=50, verbose_name="Имя")
-    last_name = models.CharField(max_length=50, verbose_name="Фамилия")
-    middle_name = models.CharField(
-        max_length=50,
-        verbose_name="Отчество",
-        blank=True,
-        null=True
-    )
+    description = models.TextField(verbose_name='Описание', blank=True)
     
-    # Контактная информация
-    email = models.EmailField(unique=True, verbose_name="Email", blank=True, null=True)
-    
-    # Профессиональная информация
-    position = models.CharField(max_length=100, verbose_name="Должность", blank=True, null=True)
-    hire_date = models.DateField(verbose_name="Дата приема на работу", default=timezone.now)
-    
-    # Описание (можно позже добавить WYSIWYG-редактор)
-    description = models.TextField(verbose_name="Описание", blank=True, null=True)
-    
-    # Связи
-    skills = models.ManyToManyField(
-        Skill,
-        through=EmployeeSkill,
-        verbose_name="Навыки",
-        related_name="employees",
-        blank=True
-    )
-    workstation = models.OneToOneField(
-        Workstation,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name="Рабочее место",
-        related_name="employee"
-    )
-
     class Meta:
-        verbose_name = "Сотрудник"
-        verbose_name_plural = "Сотрудники"
-        ordering = ["last_name", "first_name"]
-
+        verbose_name = 'Сотрудник'
+        verbose_name_plural = 'Сотрудники'
+        ordering = ['last_name', 'first_name']
+    
     def __str__(self):
-        if self.middle_name:
-            return f"{self.last_name} {self.first_name} {self.middle_name}"
-        return f"{self.last_name} {self.first_name}"
+        return f'{self.last_name} {self.first_name}'
 
-    def get_full_name(self):
-        if self.middle_name:
-            return f"{self.last_name} {self.first_name} {self.middle_name}"
-        return f"{self.last_name} {self.first_name}"
 
-# Сигналы для автоматического создания профиля сотрудника при создании пользователя
-@receiver(post_save, sender=User)
-def create_employee_profile(sender, instance, created, **kwargs):
-    if created:
-        # Создаем профиль сотрудника с базовой информацией
-        Employee.objects.create(
-            user=instance,
-            first_name=instance.first_name,
-            last_name=instance.last_name,
-            email=instance.email,
-            position="Не указана",
-            hire_date=timezone.now().date()
-        )
+class Skill(models.Model):
+    name = models.CharField(max_length=100, verbose_name='Навык')
+    description = models.TextField(verbose_name='Описание навыка', blank=True)
+    
+    class Meta:
+        verbose_name = 'Навык'
+        verbose_name_plural = 'Навыки'
+    
+    def __str__(self):
+        return self.name
 
-@receiver(post_save, sender=User)
-def save_employee_profile(sender, instance, **kwargs):
-    if hasattr(instance, 'employee_profile'):
-        instance.employee_profile.save()
+
+class EmployeeSkill(models.Model):
+    LEVEL_CHOICES = [
+        (1, 'Начальный'),
+        (2, 'Средний'),
+        (3, 'Продвинутый'),
+        (4, 'Эксперт'),
+    ]
+    
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, verbose_name='Сотрудник')
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, verbose_name='Навык')
+    level = models.IntegerField(choices=LEVEL_CHOICES, verbose_name='Уровень')
+    
+    class Meta:
+        verbose_name = 'Навык сотрудника'
+        verbose_name_plural = 'Навыки сотрудников'
+        unique_together = ['employee', 'skill']
+    
+    def __str__(self):
+        return f'{self.employee} - {self.skill} ({self.get_level_display()})'
+
+
+class EmployeeImage(models.Model):
+    employee = models.ForeignKey(
+        Employee, 
+        on_delete=models.CASCADE, 
+        related_name='images',
+        verbose_name='Сотрудник'
+    )
+    image = models.ImageField(
+        upload_to='employees/%Y/%m/%d/',
+        verbose_name='Изображение'
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Порядковый номер'
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
+    
+    class Meta:
+        verbose_name = 'Изображение сотрудника'
+        verbose_name_plural = 'Изображения сотрудников'
+        ordering = ['employee', 'order', 'created_at']
+    
+    def __str__(self):
+        return f'Изображение {self.order} для {self.employee}'
+    
+    def delete(self, *args, **kwargs):
+        # Удаляем файл изображения при удалении объекта
+        if self.image:
+            if os.path.isfile(self.image.path):
+                os.remove(self.image.path)
+        super().delete(*args, **kwargs)
+    
+    def clean(self):
+        # Валидация порядка
+        if self.order < 0:
+            raise ValidationError({'order': 'Порядковый номер не может быть отрицательным'})
