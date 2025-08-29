@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Главная страница{% endblock %}
+
+{% block content %}
+    <h2>Добро пожаловать в систему управления сотрудниками</h2>
+    <p>Этот проект предназначен для управления информацией о сотрудниках компании.</p>
+    
+    <h3>Наши сотрудники</h3>
+    <div class="employees-grid">
+        {% for employee in employees %}
+            <div class="employee-card" onclick="location.href='{% url 'employees:employee_detail' employee.pk %}'">
+                <h4>{{ employee.first_name }} {{ employee.last_name }}</h4>
+                <p><strong>Должность:</strong> {{ employee.position }}</p>
+                <p><strong>Email:</strong> {{ employee.email }}</p>
+                {% if employee.employeeskill_set.all %}
+                    <p><strong>Навыки:</strong> 
+                        {% for skill in employee.employeeskill_set.all|slice:":3" %}
+                            {{ skill.skill.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
+                {% endif %}
+            </div>
+        {% empty %}
+            <p>Сотрудники не найдены.</p>
+        {% endfor %}
+    </div>
+{% endblock %}

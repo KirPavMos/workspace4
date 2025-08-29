@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Карточка сотрудника - {{ employee }}{% endblock %}
+
+{% block content %}
+    <h2>{{ employee.last_name }} {{ employee.first_name }} {{ employee.middle_name|default:"" }}</h2>
+    
+    <div class="employee-info">
+        <p><strong>Должность:</strong> {{ employee.position }}</p>
+        <p><strong>Email:</strong> {{ employee.email }}</p>
+        <p><strong>Пол:</strong> {{ employee.get_gender_display }}</p>
+        <p><strong>Дата приема:</strong> {{ employee.hire_date }}</p>
+        
+        {% if employee.workstation %}
+        <p><strong>Рабочее место:</strong> {{ employee.workstation }}</p>
+        {% endif %}
+        
+        {% if employee.description %}
+        <p><strong>Описание:</strong> {{ employee.description }}</p>
+        {% endif %}
+        
+        <h3>Навыки:</h3>
+        {% if employee.employeeskill_set.all %}
+            <ul class="skill-list">
+            {% for employee_skill in employee.employeeskill_set.all %}
+                <li>{{ employee_skill.skill.name }} - {{ employee_skill.get_level_display }}</li>
+            {% endfor %}
+            </ul>
+        {% else %}
+            <p>Навыки не указаны</p>
+        {% endif %}
+    </div>
+    
+    {% if employee.images.all %}
+    <h3>Галерея</h3>
+    <div class="gallery">
+        {% for image in employee.images.all %}
+            <img src="{{ image.image.url }}" alt="Фото сотрудника {{ forloop.counter }}">
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <a href="{% url 'employees:employee_list' %}">← Назад к списку</a>
+{% endblock %}
