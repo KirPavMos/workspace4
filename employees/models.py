@@ -1,7 +1,80 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 import os
+from django.utils.translation import gettext_lazy as _
 
+def validate_no_adjacent_tables(value):
+    """
+    Валидатор, который не допускает нахождение тестировщиков 
+    и разработчиков за соседними столами
+    """
+    from .models import Employee
+    
+    if not value:  # Если workstation не установлен
+        return
+    
+    # Получаем номер стола из workstation
+    desk_number = None
+    
+    if isinstance(value, int):
+        from workstations.models import Workstation
+        try:
+            workstation = Workstation.objects.get(id=value)
+            desk_number = workstation.desk_number
+        except Workstation.DoesNotExist:
+            return
+    else:
+        # Если value - это объект Workstation
+        desk_number = value.desk_number
+    
+    # Преобразуем desk_number в число (если оно хранится как строка)
+    try:
+        desk_number_int = int(desk_number)
+    except (ValueError, TypeError):
+        return  # Если номер стола не является числом, пропускаем проверку
+    
+    # Получаем всех сотрудников за соседними столами
+    adjacent_tables = [desk_number_int - 1, desk_number_int + 1]
+    
+    # Находим рабочие места с соседними столами
+    from workstations.models import Workstation
+    adjacent_workstations = Workstation.objects.filter(
+        desk_number__in=[str(t) for t in adjacent_tables]
+    )
+    
+    # Получаем сотрудников на соседних рабочих местах
+    adjacent_employees = Employee.objects.filter(workstation__in=adjacent_workstations)
+    
+    # Проверяем текущего сотрудника (если он уже существует)
+    current_employee = None
+    if hasattr(validate_no_adjacent_tables, '_current_instance'):
+        current_employee = validate_no_adjacent_tables._current_instance
+    
+    if not current_employee:
+        return
+    
+    # Проверяем, есть ли среди соседей тестировщики или разработчики
+    for emp in adjacent_employees:
+        if emp == current_employee:  # Пропускаем текущего сотрудника
+            continue
+        
+        # Получаем номер стола соседнего сотрудника
+        emp_desk_number = emp.workstation.desk_number if emp.workstation else None
+        
+        is_tester = 'тестировщик' in emp.position.lower() or 'tester' in emp.position.lower()
+        is_developer = any(word in emp.position.lower() for word in ['разработчик', 'developer', 'backend', 'frontend'])
+        
+        current_is_tester = 'тестировщик' in current_employee.position.lower()
+        current_is_developer = any(word in current_employee.position.lower() for word in ['разработчик', 'developer', 'backend', 'frontend'])
+        
+        if (is_tester and current_is_developer) or (is_developer and current_is_tester):
+            raise ValidationError(
+                f'Тестировщики и разработчики не могут сидеть за соседними столами. '
+                f'Стол {desk_number} соседствует со столом {emp_desk_number} '
+                f'(сотрудник: {emp.first_name} {emp.last_name}, должность: {emp.position})'
+            )
+        
 class Employee(models.Model):
     GENDER_CHOICES = [
         ('M', 'Мужской'),
@@ -14,7 +87,7 @@ class Employee(models.Model):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, verbose_name='Пол')
     email = models.EmailField(verbose_name='Email', unique=True)
     position = models.CharField(max_length=200, verbose_name='Должность')
-    hire_date = models.DateField(verbose_name='Дата приема на работу')
+    hire_date = models.DateField(verbose_name='Дата приема на работу', default=timezone.now)
     workstation = models.ForeignKey(
         'workstations.Workstation', 
         on_delete=models.SET_NULL, 
@@ -31,7 +104,42 @@ class Employee(models.Model):
     
     def __str__(self):
         return f'{self.last_name} {self.first_name}'
+    
+    def clean(self):
+        """Валидация при сохранении"""
+        super().clean()
+    
+    # Сохраняем текущий экземпляр для использования в валидаторе
+        validate_no_adjacent_tables._current_instance = self
+    
+    # Валидируем workstation
+        if self.workstation_id:
+           validate_no_adjacent_tables(self.workstation_id)
+    
+    def save(self, *args, **kwargs):
+        """Переопределяем save для обязательной валидации"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+        
+        # Очищаем временную переменную
+        if hasattr(validate_no_adjacent_tables, '_current_instance'):
+            delattr(validate_no_adjacent_tables, '_current_instance')
+    
+    @property
+    def work_experience_days(self):
+        """Стаж работы в днях"""
+        if self.hire_date:
+            return (timezone.now().date() - self.hire_date).days
+        return 0
+    
+    @property
+    def table_number(self):
+        """Номер стола сотрудника"""
+        if self.workstation:
+            return self.workstation.desk_number
+        return None
 
+# Остальные модели (Skill, EmployeeSkill, EmployeeImage) остаются без изменений
 
 class Skill(models.Model):
     name = models.CharField(max_length=100, verbose_name='Навык')

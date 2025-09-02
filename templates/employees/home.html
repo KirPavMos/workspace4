@@ -6,23 +6,91 @@
     <h2>Добро пожаловать в систему управления сотрудниками</h2>
     <p>Этот проект предназначен для управления информацией о сотрудниках компании.</p>
     
-    <h3>Наши сотрудники</h3>
-    <div class="employees-grid">
+    <!-- Общее количество сотрудников -->
+    <div class="total-employees mb-4">
+        <h3>Всего сотрудников в компании: {{ total_employees }}</h3>
+    </div>
+    
+    <h3>Последние сотрудники</h3>
+    <div class="row">
         {% for employee in employees %}
-            <div class="employee-card" onclick="location.href='{% url 'employees:employee_detail' employee.pk %}'">
-                <h4>{{ employee.first_name }} {{ employee.last_name }}</h4>
-                <p><strong>Должность:</strong> {{ employee.position }}</p>
-                <p><strong>Email:</strong> {{ employee.email }}</p>
-                {% if employee.employeeskill_set.all %}
-                    <p><strong>Навыки:</strong> 
-                        {% for skill in employee.employeeskill_set.all|slice:":3" %}
-                            {{ skill.skill.name }}{% if not forloop.last %}, {% endif %}
-                        {% endfor %}
-                    </p>
-                {% endif %}
+            <div class="col-md-3 mb-4">
+                <div class="card employee-card" onclick="location.href='{% url 'employees:employee_detail' employee.pk %}'" style="cursor: pointer;">
+                    <!-- Первое изображение галереи -->
+                    {% with employee.images.all as images %}
+                        {% if images %}
+                            <img src="{{ images.0.image.url }}" class="card-img-top" alt="{{ employee.first_name }} {{ employee.last_name }}" style="height: 200px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <span class="text-muted">Нет фото</span>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                        <p class="card-text">
+                            <strong>Должность:</strong> {{ employee.position }}<br>
+                            <strong>Стаж:</strong> {{ employee.work_experience_days }} дней<br>
+                            {% if employee.workstation %}
+                                <strong>Стол:</strong> {{ employee.workstation.table_number }}<br>
+                            {% endif %}
+                        </p>
+                        
+                        {% if employee.employeeskill_set.all %}
+                            <p class="card-text">
+                                <strong>Навыки:</strong> 
+                                {% for skill in employee.employeeskill_set.all|slice:":2" %}
+                                    {{ skill.skill.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                {% if employee.employeeskill_set.all|length > 2 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer">
+                        <small class="text-muted">
+                            Принят: {{ employee.hire_date|date:"d.m.Y" }}
+                        </small>
+                    </div>
+                </div>
             </div>
         {% empty %}
-            <p>Сотрудники не найдены.</p>
+            <div class="col-12">
+                <p class="text-center">Сотрудники не найдены.</p>
+            </div>
         {% endfor %}
     </div>
+    
+    <!-- Ссылка на полный список сотрудников -->
+    <div class="text-center mt-4">
+        <a href="{% url 'employees:employee_list' %}" class="btn btn-primary">
+            Посмотреть всех сотрудников
+        </a>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .employee-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        height: 100%;
+    }
+    
+    .employee-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .total-employees {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+    }
+    
+    .card-img-top {
+        border-bottom: 1px solid #dee2e6;
+    }
+</style>
 {% endblock %}
