@@ -4,12 +4,12 @@ from django.utils import timezone
 import os
 from django.utils.translation import gettext_lazy as _
 
-def validate_no_adjacent_tables(value):
-    """
-    Валидатор, который не допускает нахождение тестировщиков 
-    и разработчиков за соседними столами
-    """
-    from .models import Employee
+from django.apps import apps
+
+def validate_no_adjacent_tables(value, employee_instance=None):
+    # Используем строковые ссылки на модели
+    Workstation = apps.get_model('workstations', 'Workstation')
+    Employee = apps.get_model('employees', 'Employee')
     
     if not value:  # Если workstation не установлен
         return
@@ -18,7 +18,6 @@ def validate_no_adjacent_tables(value):
     table_number = None
     
     if isinstance(value, int):
-        from workstations.models import Workstation
         try:
             workstation = Workstation.objects.get(id=value)
             table_number = workstation.table_number
@@ -27,6 +26,10 @@ def validate_no_adjacent_tables(value):
     else:
         # Если value - это объект Workstation
         table_number = value.table_number
+    
+    # Проверяем, что номер стола существует и является числом
+    if not table_number:
+        return
     
     # Преобразуем table_number в число (если оно хранится как строка)
     try:
@@ -44,7 +47,6 @@ def validate_no_adjacent_tables(value):
     adjacent_tables = [table_number_int - 1, table_number_int + 1]
     
     # Находим рабочие места с соседними столами
-    from workstations.models import Workstation
     adjacent_workstations = Workstation.objects.filter(
         table_number__in=[str(t) for t in adjacent_tables]
     )
@@ -54,11 +56,11 @@ def validate_no_adjacent_tables(value):
     
     # Проверяем, есть ли среди соседей тестировщики или разработчики
     for emp in adjacent_employees:
-        if emp == current_employee:  # Пропускаем текущего сотрудника
+        if emp == current_employee or not emp.workstation:  # Пропускаем текущего сотрудника и без рабочего места
             continue
         
-        # Получаем номер стола соседнего сотрудника (ИСПРАВЛЕНО)
-        emp_table_number = emp.workstation.table_number if emp.workstation else None
+        # Получаем номер стола соседнего сотрудника
+        emp_table_number = emp.workstation.table_number
         
         is_tester = 'тестировщик' in emp.position.lower() or 'tester' in emp.position.lower()
         is_developer = any(word in emp.position.lower() for word in ['разработчик', 'developer', 'backend', 'frontend'])
@@ -107,15 +109,16 @@ class Employee(models.Model):
         """Валидация при сохранении"""
         super().clean()
         
-        # Сохраняем текущий экземпляр для использования в валидаторе (ИСПРАВЛЕН ОТСТУП)
+        # Сохраняем текущий экземпляр для использования в валидаторе
         validate_no_adjacent_tables._current_instance = self
         
-        # Валидируем workstation (ИСПРАВЛЕНА ЛОГИКА)
+        # Валидируем workstation
         if self.workstation:
             validate_no_adjacent_tables(self.workstation)
     
     def save(self, *args, **kwargs):
         """Переопределяем save для обязательной валидации"""
+        # Валидируем перед сохранением
         self.full_clean()
         super().save(*args, **kwargs)
         
@@ -137,7 +140,7 @@ class Employee(models.Model):
             return self.workstation.table_number
         return None
 
-# Остальные модели без изменений
+# Остальные модели
 class Skill(models.Model):
     name = models.CharField(max_length=100, verbose_name='Навык')
     description = models.TextField(verbose_name='Описание навыка', blank=True)
@@ -198,9 +201,8 @@ class EmployeeImage(models.Model):
     
     def delete(self, *args, **kwargs):
         # Удаляем файл изображения при удалении объекта
-        if self.image:
-            if os.path.isfile(self.image.path):
-                os.remove(self.image.path)
+        if self.image and os.path.isfile(self.image.path):
+            os.remove(self.image.path)
         super().delete(*args, **kwargs)
     
     def clean(self):
