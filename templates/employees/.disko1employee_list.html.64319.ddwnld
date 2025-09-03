@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Список сотрудников{% endblock %}
+
+{% block content %}
+    <h2>Все сотрудники</h2>
+    
+    <!-- Пагинация сверху -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <div class="row">
+        {% for employee in page_obj %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card employee-card" onclick="location.href='{% url 'employees:employee_detail' employee.pk %}'" style="cursor: pointer; height: 100%;">
+                    <!-- Первое изображение галереи -->
+                    {% with employee.images.all as images %}
+                        {% if images %}
+                            <img src="{{ images.0.image.url }}" class="card-img-top" alt="{{ employee.first_name }} {{ employee.last_name }}" style="height: 250px; object-fit: cover;">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 250px;">
+                                <span class="text-muted">Нет фото</span>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                        <p class="card-text">
+                            <strong>Должность:</strong> {{ employee.position }}<br>
+                            <strong>Стаж:</strong> {{ employee.work_experience_days }} дней<br>
+                            {% if employee.workstation %}
+                                <strong>Стол:</strong> {{ employee.workstation.table_number }}<br>
+                            {% endif %}
+                            <strong>Email:</strong> {{ employee.email }}
+                        </p>
+                        
+                        {% if employee.employeeskill_set.all %}
+                            <p class="card-text">
+                                <strong>Навыки:</strong> 
+                                {% for skill in employee.employeeskill_set.all|slice:":3" %}
+                                    {{ skill.skill.name }} ({{ skill.get_level_display }}){% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                                {% if employee.employeeskill_set.all|length > 3 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer">
+                        <small class="text-muted">
+                            Принят: {{ employee.hire_date|date:"d.m.Y" }}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p class="text-center">Сотрудники не найдены.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация снизу -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="First">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;&laquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&laquo;</span>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;</span>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">&raquo;&raquo;</span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    
+    <div class="text-center mt-2">
+        <p class="text-muted">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+        </p>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .employee-card {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        border: 1px solid #dee2e6;
+    }
+    
+    .employee-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-img-top {
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .pagination {
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}

@@ -15,64 +15,66 @@ def validate_no_adjacent_tables(value):
         return
     
     # Получаем номер стола из workstation
-    table_number = None
+    desk_number = None
     
     if isinstance(value, int):
         from workstations.models import Workstation
         try:
             workstation = Workstation.objects.get(id=value)
-            table_number = workstation.table_number
+            desk_number = workstation.desk_number
         except Workstation.DoesNotExist:
             return
     else:
         # Если value - это объект Workstation
-        table_number = value.table_number
+        desk_number = value.desk_number
     
-    # Преобразуем table_number в число (если оно хранится как строка)
+    # Преобразуем desk_number в число (если оно хранится как строка)
     try:
-        table_number_int = int(table_number)
+        desk_number_int = int(desk_number)
     except (ValueError, TypeError):
         return  # Если номер стола не является числом, пропускаем проверку
     
-    # Получаем текущего сотрудника
-    if not hasattr(validate_no_adjacent_tables, '_current_instance'):
-        return
-    
-    current_employee = validate_no_adjacent_tables._current_instance
-    
     # Получаем всех сотрудников за соседними столами
-    adjacent_tables = [table_number_int - 1, table_number_int + 1]
+    adjacent_tables = [desk_number_int - 1, desk_number_int + 1]
     
     # Находим рабочие места с соседними столами
     from workstations.models import Workstation
     adjacent_workstations = Workstation.objects.filter(
-        table_number__in=[str(t) for t in adjacent_tables]
+        desk_number__in=[str(t) for t in adjacent_tables]
     )
     
     # Получаем сотрудников на соседних рабочих местах
     adjacent_employees = Employee.objects.filter(workstation__in=adjacent_workstations)
+    
+    # Проверяем текущего сотрудника (если он уже существует)
+    current_employee = None
+    if hasattr(validate_no_adjacent_tables, '_current_instance'):
+        current_employee = validate_no_adjacent_tables._current_instance
+    
+    if not current_employee:
+        return
     
     # Проверяем, есть ли среди соседей тестировщики или разработчики
     for emp in adjacent_employees:
         if emp == current_employee:  # Пропускаем текущего сотрудника
             continue
         
-        # Получаем номер стола соседнего сотрудника (ИСПРАВЛЕНО)
-        emp_table_number = emp.workstation.table_number if emp.workstation else None
+        # Получаем номер стола соседнего сотрудника
+        emp_desk_number = emp.workstation.desk_number if emp.workstation else None
         
         is_tester = 'тестировщик' in emp.position.lower() or 'tester' in emp.position.lower()
         is_developer = any(word in emp.position.lower() for word in ['разработчик', 'developer', 'backend', 'frontend'])
         
-        current_is_tester = 'тестировщик' in current_employee.position.lower() or 'tester' in current_employee.position.lower()
+        current_is_tester = 'тестировщик' in current_employee.position.lower()
         current_is_developer = any(word in current_employee.position.lower() for word in ['разработчик', 'developer', 'backend', 'frontend'])
         
         if (is_tester and current_is_developer) or (is_developer and current_is_tester):
             raise ValidationError(
                 f'Тестировщики и разработчики не могут сидеть за соседними столами. '
-                f'Стол {table_number} соседствует со столом {emp_table_number} '
+                f'Стол {desk_number} соседствует со столом {emp_desk_number} '
                 f'(сотрудник: {emp.first_name} {emp.last_name}, должность: {emp.position})'
             )
-
+        
 class Employee(models.Model):
     GENDER_CHOICES = [
         ('M', 'Мужской'),
@@ -106,13 +108,13 @@ class Employee(models.Model):
     def clean(self):
         """Валидация при сохранении"""
         super().clean()
-        
-        # Сохраняем текущий экземпляр для использования в валидаторе (ИСПРАВЛЕН ОТСТУП)
+    
+    # Сохраняем текущий экземпляр для использования в валидаторе
         validate_no_adjacent_tables._current_instance = self
-        
-        # Валидируем workstation (ИСПРАВЛЕНА ЛОГИКА)
-        if self.workstation:
-            validate_no_adjacent_tables(self.workstation)
+    
+    # Валидируем workstation
+        if self.workstation_id:
+           validate_no_adjacent_tables(self.workstation_id)
     
     def save(self, *args, **kwargs):
         """Переопределяем save для обязательной валидации"""
@@ -134,10 +136,11 @@ class Employee(models.Model):
     def table_number(self):
         """Номер стола сотрудника"""
         if self.workstation:
-            return self.workstation.table_number
+            return self.workstation.desk_number
         return None
 
-# Остальные модели без изменений
+# Остальные модели (Skill, EmployeeSkill, EmployeeImage) остаются без изменений
+
 class Skill(models.Model):
     name = models.CharField(max_length=100, verbose_name='Навык')
     description = models.TextField(verbose_name='Описание навыка', blank=True)
@@ -206,4 +209,4 @@ class EmployeeImage(models.Model):
     def clean(self):
         # Валидация порядка
         if self.order < 0:
-            raise ValidationError({'order': 'Порядковый номер не может быть отрицательным'})
+            raise ValidationError({'order': 'Порядковый номер не может быть отрицательным'})вый номер не может быть отрицательным'}))

@@ -3,13 +3,13 @@ from .models import Workstation
 
 @admin.register(Workstation)
 class WorkstationAdmin(admin.ModelAdmin):
-    list_display = ('desk_number', 'name', 'location', 'is_active', 'get_employee')
+    list_display = ('table_number', 'name', 'location', 'is_active', 'get_employee')
     list_filter = ('is_active', 'location')
-    search_fields = ('desk_number', 'name', 'location')
+    search_fields = ('table_number', 'name', 'location')
     list_editable = ('is_active',)
     fieldsets = (
         ('Основная информация', {
-            'fields': ('desk_number', 'name', 'location', 'is_active')
+            'fields': ('table_number', 'name', 'location', 'is_active')
         }),
         ('Описание', {
             'fields': ('description', 'equipment', 'notes'),

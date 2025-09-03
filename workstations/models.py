@@ -2,7 +2,7 @@ from django.db import models
 
 class Workstation(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название")
-    desk_number = models.CharField(max_length=20, verbose_name="Номер стола", unique=True)
+    table_number = models.CharField(max_length=20, verbose_name="Номер стола", unique=True)
     description = models.TextField(blank=True, verbose_name="Описание")
     location = models.CharField(max_length=100, verbose_name="Местоположение")
     is_active = models.BooleanField(default=True, verbose_name="Активно")
@@ -14,7 +14,7 @@ class Workstation(models.Model):
     class Meta:
         verbose_name = "Рабочее место"
         verbose_name_plural = "Рабочие места"
-        ordering = ["desk_number"]
+        ordering = ["table_number"]
 
     def __str__(self):
-        return f"{self.desk_number} - {self.name}"
+        return f"{self.table_number} - {self.name}"
