@@ -9,19 +9,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('employees', '0001_initial'),
-        ('workstations', '0001_initial'),
+        ("employees", "0001_initial"),
+        ("workstations", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='employee',
-            name='hire_date',
-            field=models.DateField(default=django.utils.timezone.now, verbose_name='Дата приема на работу'),
+            model_name="employee",
+            name="hire_date",
+            field=models.DateField(
+                default=django.utils.timezone.now, verbose_name="Дата приема на работу"
+            ),
         ),
         migrations.AlterField(
-            model_name='employee',
-            name='workstation',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='workstations.workstation', validators=[employees.models.validate_no_adjacent_tables], verbose_name='Рабочее место'),
+            model_name="employee",
+            name="workstation",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="workstations.workstation",
+                validators=[employees.models.validate_no_adjacent_tables],
+                verbose_name="Рабочее место",
+            ),
         ),
     ]

@@ -7,14 +7,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('employees', '0002_alter_employee_hire_date_alter_employee_workstation'),
-        ('workstations', '0002_alter_workstation_options_and_more'),
+        ("employees", "0002_alter_employee_hire_date_alter_employee_workstation"),
+        ("workstations", "0002_alter_workstation_options_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='employee',
-            name='workstation',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='workstations.workstation', verbose_name='Рабочее место'),
+            model_name="employee",
+            name="workstation",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="workstations.workstation",
+                verbose_name="Рабочее место",
+            ),
         ),
     ]

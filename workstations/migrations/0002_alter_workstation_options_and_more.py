@@ -6,17 +6,21 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('workstations', '0001_initial'),
+        ("workstations", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='workstation',
-            options={'ordering': ['table_number'], 'verbose_name': 'Рабочее место', 'verbose_name_plural': 'Рабочие места'},
+            name="workstation",
+            options={
+                "ordering": ["table_number"],
+                "verbose_name": "Рабочее место",
+                "verbose_name_plural": "Рабочие места",
+            },
         ),
         migrations.RenameField(
-            model_name='workstation',
-            old_name='desk_number',
-            new_name='table_number',
+            model_name="workstation",
+            old_name="desk_number",
+            new_name="table_number",
         ),
     ]

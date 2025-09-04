@@ -6,9 +6,9 @@ from django.conf.urls.static import static
 import debug_toolbar
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('employees.urls')),
-    path('__debug__/', include(debug_toolbar.urls))
+    path("admin/", admin.site.urls),
+    path("", include("employees.urls")),
+    path("__debug__/", include(debug_toolbar.urls)),
 ]
 
 # Добавляем обработку медиафайлов в режиме разработки

@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
 
@@ -28,7 +29,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INTERNAL_IPS = [
-    '127.0.0.1',
+    "127.0.0.1",
 ]
 
 
@@ -42,9 +43,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "workstations.apps.WorkstationsConfig",
-    'employees',
-    'debug_toolbar',
-    
+    "employees",
+    "debug_toolbar",
 ]
 
 MIDDLEWARE = [
@@ -62,16 +62,16 @@ ROOT_URLCONF = "workspace1.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.media',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "django.template.context_processors.media",
             ],
         },
     },
@@ -113,7 +113,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-#LANGUAGE_CODE = "en-us"
+# LANGUAGE_CODE = "en-us"
 LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
@@ -126,15 +126,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_URL = "/static/"
+STATICFILES_DIRS = (
+    [
+        os.path.join(BASE_DIR, "static"),
+    ]
+    if os.path.exists(os.path.join(BASE_DIR, "static"))
+    else []
+)
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Media files (Uploaded files)
-MEDIA_URL = '/media/'  # URL для доступа к медиафайлам
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Путь к папке с медиафайлами
+MEDIA_URL = "/media/"  # URL для доступа к медиафайлам
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # Путь к папке с медиафайлами
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
